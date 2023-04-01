@@ -35,6 +35,11 @@ jobs:
       #           echo "VPC_CIDR=172.31.0.0/16" >> $GITHUB_ENV
       - uses: actions/checkout@v3 #最新のv2では非推奨が存在する事から、v3に変更
 
+      - name: Set Node.js 18 #後段のdocker-compose execで発生したnpm error対策のために追加
+        uses: actions/setup-node@v3 #後段のdocker-compose execで発生したnpm error対策のために追加
+        with: #後段のdocker-compose execで発生したnpm error対策のために追加
+          node-version: 18 #後段のdocker-compose execで発生したnpm error対策のために追加
+
       - run: docker-compose up -d --build app web
 
       - name: Cache composer
