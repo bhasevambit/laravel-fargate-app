@@ -53,8 +53,8 @@ jobs:
           key: npm-v1-${{ hashFiles('backend/package-lock.json') }}
       - run: docker-compose exec -T web npm ci
         if: ${{ !steps.cache-npm-ci.outputs.cache-hit }}
-      - run: docker-compose exec -T web npm run prod
-      - uses: aws-actions/amazon-ecr-login@v1
+      - run: docker-compose exec -T web npm run prod #当該コマンドの実行時に「npm ERR! Your cache folder contains root-owned files, due to a bug in」のエラー発生
+      - uses: aws-actions/amazon-ecr-login@v1.6.0 #v1からv1.6.0に変更
         id: amazon-ecr-login
 
       - name: Push nginx image to ecr
