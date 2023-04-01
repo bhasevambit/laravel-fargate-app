@@ -4,90 +4,86 @@ on:
   push:
     branches:
       - main
-      - feature/push_images_to_ecr # 一時的な検証用途向け
+      - feature/push_images_to_ecr #一時的な検証用途向け
 
 env:
   AWS_REGION: ap-northeast-1
-#   IMAGE_TAG: ${{ github.sha }}
-#   SYSTEM_NAME: example
-#   SERVICE_NAME: foobar
+  IMAGE_TAG: ${{ github.sha }} #GitHub Workflow実行のトリガとなったCommitのSHAである「github.sha」を、イメージタグとして使用
+  SYSTEM_NAME: example
+  SERVICE_NAME: foobar
 
 jobs:
   deploy:
     name: Deploy app to AWS Fargate
     runs-on: ubuntu-latest
+
     steps:
       - name: Configure aws credentials for prod
         # if: github.ref == 'refs/heads/main'   #一時的に、コメントアウト中 #commitがpushされたbranchが「main」か否かを判定するif文
-        uses: aws-actions/configure-aws-credentials@v2 # node.js 12の使用が非推奨であるため、v1からv2に変更
+        uses: aws-actions/configure-aws-credentials@v2 #node.js 12の使用が非推奨であるため、v1からv2に変更
         with:
           aws-access-key-id: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ secrets.PROD_AWS_ASSUME_ROLE_ARN }}
           role-duration-seconds: 1800
-#       - name: Set env vars for prod
-#         if: github.ref == 'refs/heads/main'
-#         run: |
-#           echo "ENV_NAME=prod" >> $GITHUB_ENV
-#           echo "VPC_CIDR=172.31.0.0/16" >> $GITHUB_ENV
 
-#       - uses: actions/checkout@v2
+      - name: Set env vars for prod
+        # if: github.ref == 'refs/heads/main'   #一時的に、コメントアウト中 #commitがpushされたbranchが「main」か否かを判定するif文
+        run: |
+          echo "ENV_NAME=prod" >> $GITHUB_ENV
+      #           echo "VPC_CIDR=172.31.0.0/16" >> $GITHUB_ENV
+      - uses: actions/checkout@v3 #最新のv2では非推奨が存在する事から、v3に変更
+      - run: docker-compose up -d --build app web
 
-#       - run: docker-compose up -d --build app web
+      - name: Cache composer
+        id: cache-composer
+        uses: actions/cache@v2
+        with:
+          path: backend/vendor
+          key: composer-v1-${{ hashFiles('backend/composer.lock') }}
+      - run: docker-compose exec -T app composer install -n --prefer-dist --no-dev
+        if: ${{ !steps.cache-composer.outputs.cache-hit }}
 
-#       - name: Cache composer
-#         id: cache-composer
-#         uses: actions/cache@v2
-#         with:
-#           path: backend/vendor
-#           key: composer-v1-${{ hashFiles('backend/composer.lock') }}
+      - name: Cache npm
+        id: cache-npm-ci
+        uses: actions/cache@v2
+        with:
+          path: backend/node_modules
+          key: npm-v1-${{ hashFiles('backend/package-lock.json') }}
+      - run: docker-compose exec -T web npm ci
+        if: ${{ !steps.cache-npm-ci.outputs.cache-hit }}
+      - run: docker-compose exec -T web npm run prod
+      - uses: aws-actions/amazon-ecr-login@v1
+        id: amazon-ecr-login
 
-#       - run: docker-compose exec -T app composer install -n --prefer-dist --no-dev
-#         if: ${{ !steps.cache-composer.outputs.cache-hit }}
+      - name: Push nginx image to ecr
+        env:
+          DOCKER_BUILDKIT: 1 #BuildKitを用いたイメージビルドする事から、「1」を設定 (リファレンス書籍の開発ポリシーに依る)
+          ECR_REGISTRY: ${{ steps.amazon-ecr-login.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.SYSTEM_NAME }}-${{ env.ENV_NAME }}-${{ env.SERVICE_NAME }}-nginx
+        run: |
+          docker build \
+            --cache-from=$ECR_REGISTRY/$ECR_REPOSITORY:latest --build-arg BUILDKIT_INLINE_CACHE=1 . \
+            -f infra/docker/nginx/Dockerfile \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-#       - name: Cache npm
-#         id: cache-npm-ci
-#         uses: actions/cache@v2
-#         with:
-#           path: backend/node_modules
-#           key: npm-v1-${{ hashFiles('backend/package-lock.json') }}
-
-#       - run: docker-compose exec -T web npm ci
-#         if: ${{ !steps.cache-npm-ci.outputs.cache-hit }}
-
-#       - run: docker-compose exec -T web npm run prod
-
-#       - uses: aws-actions/amazon-ecr-login@v1
-#         id: amazon-ecr-login
-
-#       - name: Push nginx image to ecr
-#         env:
-#           DOCKER_BUILDKIT: 1
-#           ECR_REGISTRY: ${{ steps.amazon-ecr-login.outputs.registry }}
-#           ECR_REPOSITORY: ${{ env.SYSTEM_NAME }}-${{ env.ENV_NAME }}-${{ env.SERVICE_NAME }}-nginx
-#         run: |
-#           docker build \
-#             --cache-from=$ECR_REGISTRY/$ECR_REPOSITORY:latest --build-arg BUILDKIT_INLINE_CACHE=1 . \
-#             -f infra/docker/nginx/Dockerfile \
-#             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-#             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-#           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-#           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-#       - name: Push php image to ecr
-#         env:
-#           DOCKER_BUILDKIT: 1
-#           ECR_REGISTRY: ${{ steps.amazon-ecr-login.outputs.registry }}
-#           ECR_REPOSITORY: ${{ env.SYSTEM_NAME }}-${{ env.ENV_NAME }}-${{ env.SERVICE_NAME }}-php
-#         run: |
-#           docker build \
-#             --cache-from=$ECR_REGISTRY/$ECR_REPOSITORY:latest --build-arg BUILDKIT_INLINE_CACHE=1 . \
-#             -f infra/docker/php/Dockerfile \
-#             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-#             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-#           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-#           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      - name: Push php image to ecr
+        env:
+          DOCKER_BUILDKIT: 1
+          ECR_REGISTRY: ${{ steps.amazon-ecr-login.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.SYSTEM_NAME }}-${{ env.ENV_NAME }}-${{ env.SERVICE_NAME }}-php
+        run: |
+          docker build \
+            --cache-from=$ECR_REGISTRY/$ECR_REPOSITORY:latest --build-arg BUILDKIT_INLINE_CACHE=1 . \
+            -f infra/docker/php/Dockerfile \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
 #       - name: Upload env file
 #         run: aws s3 cp .env.$ENV_NAME s3://shonansurvivors-$SYSTEM_NAME-$ENV_NAME-$SERVICE_NAME-env-file/$IMAGE_TAG/.env
