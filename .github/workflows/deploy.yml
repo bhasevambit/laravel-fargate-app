@@ -68,15 +68,18 @@ jobs:
           path: backend/node_modules
           key: npm-v1-${{ hashFiles('backend/package-lock.json') }}
 
+      # --- webコンテナ(Nginx)内におけるnpmをバージョンアップ ---
+      - run: docker-compose exec -T web npm install -g npm@9.6.2 # webコンテナ内で「npm install -g npm@9.6.2」コマンドを実行
+
       # --- webコンテナ(Nginx)内におけるnode.js関連パッケージのインストール ---
-      # - run: docker-compose exec -T web npm ci # webコンテナ内で「npm ci」コマンドを実行
-      #   if: ${{ !steps.cache-npm-ci.outputs.cache-hit }}
+      - run: docker-compose exec -T web npm ci # webコンテナ内で「npm ci」コマンドを実行
+        if: ${{ !steps.cache-npm-ci.outputs.cache-hit }}
       #
       # --- webコンテナ(Nginx)内で「npm cache clear --force」コマンドを実行 ---
-      - run: docker-compose exec -T web npm cache clear --force
+      # - run: docker-compose exec -T web npm cache clear --force
 
       # --- webコンテナ(Nginx)内で「npm install」コマンドを実行 ---
-      - run: docker-compose exec -T web npm install
+      # - run: docker-compose exec -T web npm install
       #
       # --- webコンテナ(Nginx)内におけるLaravelビルド(Production)の実行 (webコンテナ(Nginx)内で「npm run prod」コマンドを実行) ---
       - run: docker-compose exec -T web npm run prod #!!! 当該コマンドの実行時に「npm ERR! Your cache folder contains root-owned files, due to a bug in」のエラー発生 !!!
