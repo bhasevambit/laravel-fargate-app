@@ -39,7 +39,7 @@ jobs:
 
       - name: Cache composer
         id: cache-composer
-        uses: actions/cache@v2
+        uses: actions/cache@v3 #v2からv3に変更
         with:
           path: backend/vendor
           key: composer-v1-${{ hashFiles('backend/composer.lock') }}
