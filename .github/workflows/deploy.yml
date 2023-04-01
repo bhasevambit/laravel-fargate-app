@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Configure aws credentials for prod
         # if: github.ref == 'refs/heads/main'   #一時的に、コメントアウト中 #commitがpushされたbranchが「main」か否かを判定するif文
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2 # node.js 12の使用が非推奨であるため、v1からv2に変更
         with:
           aws-access-key-id: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
