@@ -34,6 +34,7 @@ jobs:
           echo "ENV_NAME=prod" >> $GITHUB_ENV
       #           echo "VPC_CIDR=172.31.0.0/16" >> $GITHUB_ENV
       - uses: actions/checkout@v3 #最新のv2では非推奨が存在する事から、v3に変更
+
       - run: docker-compose up -d --build app web
 
       - name: Cache composer
@@ -42,18 +43,22 @@ jobs:
         with:
           path: backend/vendor
           key: composer-v1-${{ hashFiles('backend/composer.lock') }}
+
       - run: docker-compose exec -T app composer install -n --prefer-dist --no-dev
         if: ${{ !steps.cache-composer.outputs.cache-hit }}
 
       - name: Cache npm
         id: cache-npm-ci
-        uses: actions/cache@v2
+        uses: actions/cache@v3 #v2からv3に変更
         with:
           path: backend/node_modules
           key: npm-v1-${{ hashFiles('backend/package-lock.json') }}
+
       - run: docker-compose exec -T web npm ci
         if: ${{ !steps.cache-npm-ci.outputs.cache-hit }}
+
       - run: docker-compose exec -T web npm run prod #当該コマンドの実行時に「npm ERR! Your cache folder contains root-owned files, due to a bug in」のエラー発生
+
       - uses: aws-actions/amazon-ecr-login@v1.6.0 #v1からv1.6.0に変更
         id: amazon-ecr-login
 
