@@ -33,7 +33,7 @@ jobs:
       - name: Set env vars for prod
         # if: github.ref == 'refs/heads/main'   #一時的に、コメントアウト中 #commitがpushされたbranchが「main」か否かを判定するif文
         run: |
-          echo "ENV_NAME=prod" >> $GITHUB_ENV
+          echo "ENV_NAME=prod" >> $GITHUB_ENV #環境変数「GITJIB_ENV」に「prod」をセット (以降の全てのstepで有効)
       #           echo "VPC_CIDR=172.31.0.0/16" >> $GITHUB_ENV
       #
       # --- コードチェックアウト ---
@@ -60,7 +60,7 @@ jobs:
       - run: docker-compose exec -T app composer install -n --prefer-dist --no-dev
         if: ${{ !steps.cache-composer.outputs.cache-hit }}
 
-      # --- webコンテナ(Nginx)向けcomposerのキャッシュ ---
+      # --- webコンテナ(Nginx)向けnpmのキャッシュ ---
       - name: Cache npm
         id: cache-npm-ci
         uses: actions/cache@v3 #v2からv3に変更
@@ -69,12 +69,17 @@ jobs:
           key: npm-v1-${{ hashFiles('backend/package-lock.json') }}
 
       # --- webコンテナ(Nginx)内におけるnode.js関連パッケージのインストール ---
-      - run: docker-compose exec -T web npm ci # webコンテナ内で「npm ci」コマンドを実行
-        if: ${{ !steps.cache-npm-ci.outputs.cache-hit }}
-      # - run: docker-compose exec -T web npm install # webコンテナ内で「npm install」コマンドを実行
+      # - run: docker-compose exec -T web npm ci # webコンテナ内で「npm ci」コマンドを実行
+      #   if: ${{ !steps.cache-npm-ci.outputs.cache-hit }}
       #
-      # --- webコンテナ(Nginx)内におけるLaravelビルド(Production)の実行 ---
-      # - run: docker-compose exec -T web npm run prod #webコンテナ内で「npm run prod」コマンドを実行. !!! 当該コマンドの実行時に「npm ERR! Your cache folder contains root-owned files, due to a bug in」のエラー発生 !!!
+      # --- webコンテナ(Nginx)内で「npm cache clear --force」コマンドを実行 ---
+      - run: docker-compose exec -T web npm cache clear --force
+
+      # --- webコンテナ(Nginx)内で「npm install」コマンドを実行 ---
+      - run: docker-compose exec -T web npm install
+      #
+      # --- webコンテナ(Nginx)内におけるLaravelビルド(Production)の実行 (webコンテナ(Nginx)内で「npm run prod」コマンドを実行) ---
+      - run: docker-compose exec -T web npm run prod #!!! 当該コマンドの実行時に「npm ERR! Your cache folder contains root-owned files, due to a bug in」のエラー発生 !!!
 
       # --- ECRへのログイン ---
       - uses: aws-actions/amazon-ecr-login@v1.6.0 #v1からv1.6.0に変更
@@ -100,7 +105,7 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
           ECR_REGISTRY: ${{ steps.amazon-ecr-login.outputs.registry }}
-          ECR_REPOSITORY: ${{ env.SYSTEM_NAME }}-${{ env.ENV_NAME }}-${{ env.SERVICE_NAME }}-php
+          ECR_REPOSITORY: ${{ env.SYSTEM_NAME }}-${{ env.ENV_NAME }}-${{ env.SERVICE_NAME }}-php #「env.ENV_NAME」は『name: Set env vars for prod』のstepでセットした値を使用
         run: |
           docker build \
             --cache-from=$ECR_REGISTRY/$ECR_REPOSITORY:latest --build-arg BUILDKIT_INLINE_CACHE=1 . \
