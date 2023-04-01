@@ -68,40 +68,34 @@ jobs:
           path: backend/node_modules
           key: npm-v1-${{ hashFiles('backend/package-lock.json') }}
 
-      # --- webコンテナ(Nginx)内におけるnpmをバージョンアップ ---
+      # --- webコンテナ(Nginx)内におけるnpmをバージョンアップ (後段での「npm run prod」実行時の「npm ERR! Your cache folder contains root-owned files, due to a bug in」エラー対策)---
       - run: docker-compose exec -T web npm install -g npm@9.6.2 # webコンテナ内で「npm install -g npm@9.6.2」コマンドを実行
 
       # --- webコンテナ(Nginx)内におけるnode.js関連パッケージのインストール ---
       - run: docker-compose exec -T web npm ci # webコンテナ内で「npm ci」コマンドを実行
         if: ${{ !steps.cache-npm-ci.outputs.cache-hit }}
-      #
-      # --- webコンテナ(Nginx)内で「npm cache clear --force」コマンドを実行 ---
-      # - run: docker-compose exec -T web npm cache clear --force
 
-      # --- webコンテナ(Nginx)内で「npm install」コマンドを実行 ---
-      # - run: docker-compose exec -T web npm install
-      #
       # --- webコンテナ(Nginx)内におけるLaravelビルド(Production)の実行 (webコンテナ(Nginx)内で「npm run prod」コマンドを実行) ---
-      - run: docker-compose exec -T web npm run prod #!!! 当該コマンドの実行時に「npm ERR! Your cache folder contains root-owned files, due to a bug in」のエラー発生 !!!
+      - run: docker-compose exec -T web npm run prod
 
       # --- ECRへのログイン ---
       - uses: aws-actions/amazon-ecr-login@v1.6.0 #v1からv1.6.0に変更
         id: amazon-ecr-login
 
       # --- webコンテナ(Nginx)イメージのコンテナBuild & ECRへのPush ---
-      # - name: Push nginx image to ecr
-      #   env:
-      #     DOCKER_BUILDKIT: 1 #BuildKitを用いたイメージビルドする事から、「1」を設定 (リファレンス書籍の開発ポリシーに依る)
-      #     ECR_REGISTRY: ${{ steps.amazon-ecr-login.outputs.registry }}
-      #     ECR_REPOSITORY: ${{ env.SYSTEM_NAME }}-${{ env.ENV_NAME }}-${{ env.SERVICE_NAME }}-nginx
-      #   run: |
-      #     docker build \
-      #       --cache-from=$ECR_REGISTRY/$ECR_REPOSITORY:latest --build-arg BUILDKIT_INLINE_CACHE=1 . \
-      #       -f infra/docker/nginx/Dockerfile \
-      #       -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-      #       -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      - name: Push nginx image to ecr
+        env:
+          DOCKER_BUILDKIT: 1 #BuildKitを用いたイメージビルドする事から、「1」を設定 (リファレンス書籍の開発ポリシーに依る)
+          ECR_REGISTRY: ${{ steps.amazon-ecr-login.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.SYSTEM_NAME }}-${{ env.ENV_NAME }}-${{ env.SERVICE_NAME }}-nginx
+        run: |
+          docker build \
+            --cache-from=$ECR_REGISTRY/$ECR_REPOSITORY:latest --build-arg BUILDKIT_INLINE_CACHE=1 . \
+            -f infra/docker/nginx/Dockerfile \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       # --- appコンテナ(PHP)イメージのコンテナBuild & ECRへのPush ---
       - name: Push php image to ecr
