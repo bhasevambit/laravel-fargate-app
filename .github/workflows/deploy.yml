@@ -61,18 +61,18 @@ jobs:
         if: ${{ !steps.cache-composer.outputs.cache-hit }}
 
       # --- webコンテナ(Nginx)向けcomposerのキャッシュ ---
-      # - name: Cache npm
-      #   id: cache-npm-ci
-      #   uses: actions/cache@v3 #v2からv3に変更
-      #   with:
-      #     path: backend/node_modules
-      #     key: npm-v1-${{ hashFiles('backend/package-lock.json') }}
-      #
-      # --- webコンテナ(Nginx)内におけるnode.js関連パッケージのインストール ---
-      # - run: docker-compose exec -T web npm ci # webコンテナ内で「npm ci」コマンドを実行
-      # - run: docker-compose exec -T web npm install # webコンテナ内で「npm install」コマンドを実行
-      #   # if: ${{ !steps.cache-npm-ci.outputs.cache-hit }}
+      - name: Cache npm
+        id: cache-npm-ci
+        uses: actions/cache@v3 #v2からv3に変更
+        with:
+          path: backend/node_modules
+          key: npm-v1-${{ hashFiles('backend/package-lock.json') }}
 
+      # --- webコンテナ(Nginx)内におけるnode.js関連パッケージのインストール ---
+      - run: docker-compose exec -T web npm ci # webコンテナ内で「npm ci」コマンドを実行
+        if: ${{ !steps.cache-npm-ci.outputs.cache-hit }}
+      # - run: docker-compose exec -T web npm install # webコンテナ内で「npm install」コマンドを実行
+      #
       # --- webコンテナ(Nginx)内におけるLaravelビルド(Production)の実行 ---
       # - run: docker-compose exec -T web npm run prod #webコンテナ内で「npm run prod」コマンドを実行. !!! 当該コマンドの実行時に「npm ERR! Your cache folder contains root-owned files, due to a bug in」のエラー発生 !!!
 
