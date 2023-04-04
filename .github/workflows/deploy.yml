@@ -135,5 +135,6 @@ jobs:
 
       # --- ecspressoを用いたECS deploy ---
       - name: Deploy to ecs
-        run: ecspresso deploy --config config_$ENV_NAME.yaml --latest-task-definition
+        run: ecspresso deploy --config config_$ENV_NAME.yaml
+        # run: ecspresso deploy --config config_$ENV_NAME.yaml --latest-task-definition
         working-directory: ./ecspresso
