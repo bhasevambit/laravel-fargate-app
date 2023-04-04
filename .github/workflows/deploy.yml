@@ -82,7 +82,7 @@ jobs:
         id: amazon-ecr-login
 
       # --- webコンテナ(Nginx)イメージのコンテナBuild & ECRへのPush ---
-      - name: Push nginx image to ecr
+      - name: Push nginx image to ECR
         env:
           DOCKER_BUILDKIT: 1 #BuildKitを用いたイメージビルドする事から、「1」を設定 (リファレンス書籍の開発ポリシーに依る)
           ECR_REGISTRY: ${{ steps.amazon-ecr-login.outputs.registry }}
@@ -97,7 +97,7 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       # --- appコンテナ(PHP)イメージのコンテナBuild & ECRへのPush ---
-      - name: Push php image to ecr
+      - name: Push php image to ECR
         env:
           DOCKER_BUILDKIT: 1
           ECR_REGISTRY: ${{ steps.amazon-ecr-login.outputs.registry }}
@@ -128,7 +128,7 @@ jobs:
         working-directory: ./ecspresso
 
       # --- DBマイグレーション (ecspresso runと合わせて、DBマイグレーションのために、NginxとPHPにoverrideを実施)---
-      - name: Migrate database
+      - name: Migrate DATABASE
         run: |
           ecspresso run --config config_$ENV_NAME.yaml \
             --latest-task-definition \
@@ -137,7 +137,7 @@ jobs:
         working-directory: ./ecspresso
 
       # --- ecspressoを用いたECS Deploy ---
-      - name: Deploy to ecs
+      - name: Deploy to ECS
         # run: ecspresso deploy --config config_$ENV_NAME.yaml
         run: ecspresso deploy --config config_$ENV_NAME.yaml --latest-task-definition #タスク定義の登録は行わずに最新のタスク定義を使って、Webアプリケーションとしてのタスクをローリングアップデート
         working-directory: ./ecspresso
