@@ -117,7 +117,7 @@ jobs:
 
       # --- GitHub Hosted Runnerへのecspressoのinstall ---
       - name: Download ecspresso
-        uses: kayac/ecspresso@v2 #v0からv2に変更
+        uses: kayac/ecspresso@v0
         with:
           version: v1.5.3
       #
