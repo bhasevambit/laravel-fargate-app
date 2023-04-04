@@ -14,14 +14,10 @@
     "maximumPercent": 200,
     "minimumHealthyPercent": 100
   },
-  "deploymentController": {
-    "type": "ECS"
-  },
   "desiredCount": 1,
   "enableECSManagedTags": false,
   "enableExecuteCommand": true,
   "healthCheckGracePeriodSeconds": 60,
-  "launchType": "",
   "loadBalancers": [
     {
       "containerName": "nginx",
@@ -42,12 +38,11 @@
       ]
     }
   },
-  "pendingCount": 0,
-  "platformFamily": "Linux",
+  "placementConstraints": [],
+  "placementStrategy": [],
   "platformVersion": "1.4.0",
-  "propagateTags": "NONE",
-  "runningCount": 0,
   "schedulingStrategy": "REPLICA",
+  "serviceRegistries": [],
   "tags": [
     {
       "key": "Env",

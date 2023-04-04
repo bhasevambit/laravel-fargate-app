@@ -2,10 +2,6 @@
   "containerDefinitions": [
     {
       "cpu": 0,
-      "command": [
-        "sh",
-        "scripts/deploy.sh"
-      ],
       "dependsOn": [
         {
           "condition": "START",
@@ -19,7 +15,7 @@
         }
       ],
       "essential": true,
-      "image": "353981446712.dkr.ecr.ap-northeast-1.amazonaws.com/example-prod-foobar-nginx:latest",
+      "image": "{{ tfstate `data.aws_ecr_repository.nginx.repository_url` }}:{{ must_env `IMAGE_TAG` }}",
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
@@ -41,10 +37,16 @@
           "hostPort": 80,
           "protocol": "tcp"
         }
-      ]
+      ],
+      "secrets": [],
+      "volumesFrom": []
     },
     {
       "cpu": 0,
+      "command": [
+        "sh",
+        "scripts/deploy.sh"
+      ],
       "environment": [],
       "environmentFiles": [
         {
@@ -69,6 +71,7 @@
         }
       ],
       "name": "php",
+      "portMappings": [],
       "secrets": [
         {
           "name": "APP_KEY",
@@ -78,7 +81,8 @@
           "name": "DB_PASSWORD",
           "valueFrom": "/{{ must_env `SYSTEM_NAME` }}/{{ must_env `ENV_NAME` }}/{{ must_env `SERVICE_NAME` }}/DB_PASSWORD"
         }
-      ]
+      ],
+      "volumesFrom": []
     }
   ],
   "cpu": "256",
@@ -86,6 +90,7 @@
   "family": "{{ must_env `SYSTEM_NAME` }}-{{ must_env `ENV_NAME` }}-{{ must_env `SERVICE_NAME` }}",
   "memory": "512",
   "networkMode": "awsvpc",
+  "placementConstraints": [],
   "requiresCompatibilities": [
     "FARGATE"
   ],
