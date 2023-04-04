@@ -115,6 +115,7 @@ jobs:
       #         run: aws s3 cp .env.$ENV_NAME s3://shonansurvivors-$SYSTEM_NAME-$ENV_NAME-$SERVICE_NAME-env-file/$IMAGE_TAG/.env
       #         working-directory: backend
 
+      # --- GitHub Hosted Runnerへのecspressoのinstall ---
       - name: Download ecspresso
         uses: kayac/ecspresso@v2 #v0からv2に変更
         with:
@@ -132,6 +133,7 @@ jobs:
       #             --overrides='{"containerOverrides":[{"name":"nginx", "command":["nginx", "-v"]},{"name":"php", "command":["php", "artisan", "migrate", "--force"]}]}'
       #         working-directory: ./ecspresso
 
+      # --- ecspressoを用いたECS deploy ---
       - name: Deploy to ecs
         run: ecspresso deploy --config config_$ENV_NAME.yaml --latest-task-definition
         working-directory: ./ecspresso
