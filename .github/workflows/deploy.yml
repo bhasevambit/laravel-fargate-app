@@ -117,9 +117,9 @@ jobs:
 
       # --- GitHub Hosted Runner上にecspressoを構築 ---
       - name: Set ecspresso v1.5.3
-        uses: kayac/ecspresso@v0
+        uses: kayac/ecspresso@v2.1.0 #v0からv2.1.0に変更 (最新バージョンに変更)
         with:
-          version: v1.5.3
+          version: v2.1.0 #v1.5.3からv2.1.0に変更 (ローカルのバージョンと合わせるために変更)
       #
       #       - name: Register task definition
       #         run: ecspresso register --config config_$ENV_NAME.yaml
