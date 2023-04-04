@@ -38,7 +38,7 @@ jobs:
       # --- コードチェックアウト ---
       - uses: actions/checkout@v3 #最新のv2では非推奨が存在する事から、v3に変更)
 
-      # --- node.js構築 (ローカル開発環境とバージョンをあわせるために追加)---
+      # --- GitHub Hosted Runner上にnode.jsを構築 (ローカル開発環境とバージョンをあわせるために追加)---
       - name: Set Node.js 19.8.1
         uses: actions/setup-node@v3
         with:
@@ -115,8 +115,8 @@ jobs:
       #         run: aws s3 cp .env.$ENV_NAME s3://shonansurvivors-$SYSTEM_NAME-$ENV_NAME-$SERVICE_NAME-env-file/$IMAGE_TAG/.env
       #         working-directory: backend
 
-      # --- GitHub Hosted Runnerへのecspressoのinstall ---
-      - name: Download ecspresso
+      # --- GitHub Hosted Runner上にecspressoを構築 ---
+      - name: Set ecspresso v1.5.3
         uses: kayac/ecspresso@v0
         with:
           version: v1.5.3
