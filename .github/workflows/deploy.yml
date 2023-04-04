@@ -32,9 +32,9 @@ jobs:
       - name: Set env vars for prod
         if: github.ref == 'refs/heads/main' #commitがpushされたbranchが「main」か否かを判定するif文
         run: |
-          echo "ENV_NAME=prod" >> $GITHUB_ENV #環境変数「GITJIB_ENV」に「prod」をセット (以降の全てのstepで有効)
-      #    echo "VPC_CIDR=172.31.0.0/16" >> $GITHUB_ENV
-      #
+          echo "ENV_NAME=prod" >> $GITHUB_ENV #環境変数「ENV_NAME」に「prod」をセット (以降の全てのstepで有効)
+          echo "VPC_CIDR=172.31.0.0/16" >> $GITHUB_ENV  #環境変数「VPC_CIDR」に「172.31.0.0/16」をセット (以降の全てのstepで有効)
+
       # --- コードチェックアウト ---
       - uses: actions/checkout@v3 #最新のv2では非推奨が存在する事から、v3に変更)
 
