@@ -121,20 +121,22 @@ jobs:
         uses: kayac/ecspresso@v2.1.0 #v0からv2.1.0に変更 (最新バージョンに変更)
         with:
           version: v2.1.0 #v1.5.3からv2.1.0に変更 (ローカルのバージョンと合わせるために変更)
-      #
-      #       - name: Register task definition
-      #         run: ecspresso register --config config_$ENV_NAME.yaml
-      #         working-directory: ./ecspresso
 
-      #       - name: Migrate database
-      #         run: |
-      #           ecspresso run --config config_$ENV_NAME.yaml \
-      #             --latest-task-definition \
-      #             --watch-container=php \
-      #             --overrides='{"containerOverrides":[{"name":"nginx", "command":["nginx", "-v"]},{"name":"php", "command":["php", "artisan", "migrate", "--force"]}]}'
-      #         working-directory: ./ecspresso
+      # --- DBマイグレーションのために、「ecspresso register」コマンドを用いてタスク定義のみを実施 ---
+      - name: Register task definition
+        run: ecspresso register --config config_$ENV_NAME.yaml
+        working-directory: ./ecspresso
 
-      # --- ecspressoを用いたECS deploy ---
+      # --- DBマイグレーション (ecspresso runと合わせて、DBマイグレーションのために、NginxとPHPにoverrideを実施)---
+      - name: Migrate database
+        run: |
+          ecspresso run --config config_$ENV_NAME.yaml \
+            --latest-task-definition \
+            --watch-container=php \
+            --overrides='{"containerOverrides":[{"name":"nginx", "command":["nginx", "-v"]},{"name":"php", "command":["php", "artisan", "migrate", "--force"]}]}'
+        working-directory: ./ecspresso
+
+      # --- ecspressoを用いたECS Deploy ---
       - name: Deploy to ecs
         run: ecspresso deploy --config config_$ENV_NAME.yaml
         # run: ecspresso deploy --config config_$ENV_NAME.yaml --latest-task-definition
