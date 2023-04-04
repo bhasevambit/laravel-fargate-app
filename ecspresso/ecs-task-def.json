@@ -2,6 +2,10 @@
   "containerDefinitions": [
     {
       "cpu": 0,
+      "command": [
+        "sh",
+        "scripts/deploy.sh"
+      ],
       "dependsOn": [
         {
           "condition": "START",
