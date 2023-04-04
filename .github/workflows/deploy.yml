@@ -138,6 +138,6 @@ jobs:
 
       # --- ecspressoを用いたECS Deploy ---
       - name: Deploy to ecs
-        run: ecspresso deploy --config config_$ENV_NAME.yaml
-        # run: ecspresso deploy --config config_$ENV_NAME.yaml --latest-task-definition
+        # run: ecspresso deploy --config config_$ENV_NAME.yaml
+        run: ecspresso deploy --config config_$ENV_NAME.yaml --latest-task-definition #タスク定義の登録は行わずに最新のタスク定義を使って、Webアプリケーションとしてのタスクをローリングアップデート
         working-directory: ./ecspresso
